@@ -50,10 +50,16 @@ public class Main {
     }
 
     private static void printHand(List<Card> hand) {
-        System.out.println("你的手牌：");
+        System.out.print("你的手牌：");
+        List<IndexedCard> indexed = new java.util.ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
-            System.out.println(i + ": " + hand.get(i));
+            indexed.add(new IndexedCard(i, hand.get(i)));
         }
+        indexed.sort((a, b) -> compareCards(a.card, b.card));
+        for (IndexedCard entry : indexed) {
+            System.out.print(" [" + entry.index + ":" + entry.card + "]");
+        }
+        System.out.println();
     }
 
     private static void printDiscardPile(List<Card> discards) {
@@ -144,6 +150,43 @@ public class Main {
             case PI_HU:
             default:
                 return "屁胡";
+        }
+    }
+
+    private static int compareCards(Card a, Card b) {
+        int typeDiff = cardCategory(a) - cardCategory(b);
+        if (typeDiff != 0) {
+            return typeDiff;
+        }
+        if (!a.isHonor() && !b.isHonor()) {
+            return Integer.compare(a.getRank(), b.getRank());
+        }
+        return 0;
+    }
+
+    private static int cardCategory(Card card) {
+        if (!card.isHonor()) {
+            return card.getSuit() == Card.Suit.TIAO ? 0 : 1;
+        }
+        switch (card.getHonor()) {
+            case HONG_ZHONG:
+                return 2;
+            case FA_CAI:
+                return 3;
+            case BAI_BAN:
+                return 4;
+            default:
+                return 5;
+        }
+    }
+
+    private static final class IndexedCard {
+        private final int index;
+        private final Card card;
+
+        private IndexedCard(int index, Card card) {
+            this.index = index;
+            this.card = card;
         }
     }
 
