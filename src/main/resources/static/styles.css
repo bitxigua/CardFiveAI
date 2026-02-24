@@ -93,14 +93,22 @@ button:not(:disabled):hover {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     text-align: center;
-    padding: 24px 12px;
+    padding: 16px 8px;
     border-radius: 14px;
     border: 1px dashed rgba(255, 255, 255, 0.15);
     background: rgba(255, 255, 255, 0.02);
+    gap: 10px;
 }
 
+.ai-grid {
+    justify-content: center;
+}
+
+.ai-grid canvas {
+    width: 60px;
+    height: 84px;
+}
 .ai-seat h3 {
     margin: 0 0 8px;
 }

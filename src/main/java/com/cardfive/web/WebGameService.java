@@ -53,6 +53,8 @@ public class WebGameService implements PlayerInteractionHandler {
     private volatile String statusMessage = "等待开始";
     private volatile List<HandTileView> latestHandView = Collections.emptyList();
     private volatile List<CardView> latestDiscardView = Collections.emptyList();
+    private volatile List<CardView> aiOneHandView = Collections.emptyList();
+    private volatile List<CardView> aiTwoHandView = Collections.emptyList();
 
     public synchronized void startNewRound() {
         if (gameStatus == GameStatus.RUNNING || gameStatus == GameStatus.WAITING_FOR_PLAYER) {
@@ -75,6 +77,8 @@ public class WebGameService implements PlayerInteractionHandler {
                 statusMessage,
                 latestHandView,
                 latestDiscardView,
+                aiOneHandView,
+                aiTwoHandView,
                 new ArrayList<>(logEntries),
                 pendingRequest
         );
@@ -189,6 +193,17 @@ public class WebGameService implements PlayerInteractionHandler {
         return builder.toString();
     }
 
+    private List<CardView> buildAiHand(Player aiPlayer) {
+        if (aiPlayer == null) {
+            return Collections.emptyList();
+        }
+        List<Card> cards = new ArrayList<>(aiPlayer.getHand());
+        cards.sort(WebGameService::compareCards);
+        return cards.stream()
+                .map(CardView::fromCard)
+                .collect(Collectors.toList());
+    }
+
     private void refreshSnapshots() {
         if (humanPlayer != null) {
             List<IndexedCard> sorted = new ArrayList<>();
@@ -214,6 +229,9 @@ public class WebGameService implements PlayerInteractionHandler {
         } else {
             latestDiscardView = Collections.emptyList();
         }
+
+        aiOneHandView = buildAiHand(aiOne);
+        aiTwoHandView = buildAiHand(aiTwo);
     }
 
     private void resetState() {
@@ -222,6 +240,8 @@ public class WebGameService implements PlayerInteractionHandler {
         logEntries.clear();
         latestHandView = Collections.emptyList();
         latestDiscardView = Collections.emptyList();
+        aiOneHandView = Collections.emptyList();
+        aiTwoHandView = Collections.emptyList();
     }
 
     private void clearPendingActions() {
@@ -357,6 +377,8 @@ public class WebGameService implements PlayerInteractionHandler {
         private final String statusMessage;
         private final List<HandTileView> hand;
         private final List<CardView> discards;
+        private final List<CardView> aiOneHand;
+        private final List<CardView> aiTwoHand;
         private final List<String> logs;
         private final PendingRequest pendingRequest;
 
@@ -364,12 +386,16 @@ public class WebGameService implements PlayerInteractionHandler {
                              String statusMessage,
                              List<HandTileView> hand,
                              List<CardView> discards,
+                             List<CardView> aiOneHand,
+                             List<CardView> aiTwoHand,
                              List<String> logs,
                              PendingRequest pendingRequest) {
             this.status = status;
             this.statusMessage = statusMessage;
             this.hand = hand;
             this.discards = discards;
+             this.aiOneHand = aiOneHand;
+             this.aiTwoHand = aiTwoHand;
             this.logs = logs;
             this.pendingRequest = pendingRequest;
         }
@@ -388,6 +414,14 @@ public class WebGameService implements PlayerInteractionHandler {
 
         public List<CardView> getDiscards() {
             return discards;
+        }
+
+        public List<CardView> getAiOneHand() {
+            return aiOneHand;
+        }
+
+        public List<CardView> getAiTwoHand() {
+            return aiTwoHand;
         }
 
         public List<String> getLogs() {

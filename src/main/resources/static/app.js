@@ -9,6 +9,8 @@ const huBtn = document.getElementById('hu-btn');
 const pengBtn = document.getElementById('peng-btn');
 const gangBtn = document.getElementById('gang-btn');
 const passBtn = document.getElementById('pass-btn');
+const aiOneHandContainer = document.getElementById('ai-one-hand');
+const aiTwoHandContainer = document.getElementById('ai-two-hand');
 
 startBtn.addEventListener('click', async () => {
     await fetch('/api/game/start', {method: 'POST'});
@@ -46,6 +48,8 @@ function render(state) {
     statusLabel.textContent = `${state.status} · ${state.statusMessage}`;
     currentPending = state.pendingRequest;
     renderHand(state.hand, state.pendingRequest);
+    renderAiHand(state.aiOneHand, aiOneHandContainer);
+    renderAiHand(state.aiTwoHand, aiTwoHandContainer);
     renderDiscards(state.discards);
     renderLogs(state.logs);
     renderActions(state.pendingRequest);
@@ -86,6 +90,20 @@ function renderDiscards(discards) {
         canvas.height = 112;
         drawTile(canvas, card);
         discardContainer.appendChild(canvas);
+    });
+}
+
+function renderAiHand(hand, container) {
+    container.innerHTML = '';
+    if (!hand) {
+        return;
+    }
+    hand.forEach(card => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 80;
+        canvas.height = 112;
+        drawTile(canvas, card);
+        container.appendChild(canvas);
     });
 }
 
