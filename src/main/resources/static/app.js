@@ -157,14 +157,51 @@ loadState();
 
 /* --- Tile rendering --- */
 const COLORS = {
-    ivory: '#f8f4e8',
-    ivoryShade: '#d5ccb5',
-    border: '#c1b79f',
-    green: '#1b8e4e',
-    blue: '#1f6cb3',
-    red: '#d6403b',
-    yellow: '#f4e5b8'
+    ivory: '#f8f2e7',
+    ivoryShade: '#eadcc1',
+    border: '#c9b8a1',
+    deepShadow: 'rgba(15,16,18,0.35)',
+    blue: '#1d6eb3',
+    green: '#1e9b6c',
+    jade: '#009b6f',
+    red: '#d54646',
+    amber: '#f3dda3',
+    ink: '#0f3f66'
 };
+
+const honorImages = {
+    HONG_ZHONG: createImageAsset('/assets/honors/hongzhong.png'),
+    FA_CAI: createImageAsset('/assets/honors/facai.png'),
+    BAI_BAN: createImageAsset('/assets/honors/baiban.png')
+};
+
+const tileImages = {
+    TIAO_1: createImageAsset('/assets/bamboo/yitiao.jpg'),
+    TIAO_2: createImageAsset('/assets/bamboo/ertiao.jpeg'),
+    TIAO_3: createImageAsset('/assets/bamboo/santiao.jpeg'),
+    TIAO_4: createImageAsset('/assets/bamboo/sitiao.png'),
+    TIAO_5: createImageAsset('/assets/bamboo/wutiao.png'),
+    TIAO_6: createImageAsset('/assets/bamboo/liutiao.png'),
+    TIAO_7: createImageAsset('/assets/bamboo/qitiao.png'),
+    TIAO_8: createImageAsset('/assets/bamboo/batiao.png'),
+    TIAO_9: createImageAsset('/assets/bamboo/jiutiao.png'),
+    TONG_1: createImageAsset('/assets/bamboo/yitong.png'),
+    TONG_2: createImageAsset('/assets/bamboo/ertong.png'),
+    TONG_3: createImageAsset('/assets/bamboo/santong.png'),
+    TONG_4: createImageAsset('/assets/bamboo/sitong.jpeg'),
+    TONG_5: createImageAsset('/assets/bamboo/wutong.png'),
+    TONG_6: createImageAsset('/assets/bamboo/liutong.png'),
+    TONG_7: createImageAsset('/assets/bamboo/qitong.png'),
+    TONG_8: createImageAsset('/assets/bamboo/batong.png'),
+    TONG_9: createImageAsset('/assets/bamboo/jiutong.png')
+};
+
+function createImageAsset(src) {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => loadState();
+    return img;
+}
 
 function drawTile(canvas, card) {
     const ctx = canvas.getContext('2d');
@@ -172,73 +209,134 @@ function drawTile(canvas, card) {
     drawBackground(ctx, w, h);
 
     if (card.honorTile) {
-        drawHonor(ctx, card.honor, w, h);
+        if (!drawHonorImage(ctx, card.honor, w, h)) {
+            drawHonor(ctx, card.honor, w, h);
+        }
     } else if (card.suit === 'TIAO') {
+        const key = `TIAO_${card.rank}`;
+        if (drawTileSuitImage(ctx, key, w, h)) {
+            return;
+        }
         drawBamboo(ctx, card.rank, w, h);
+    } else if (card.suit === 'TONG') {
+        const key = `TONG_${card.rank}`;
+        if (drawTileSuitImage(ctx, key, w, h)) {
+            return;
+        }
+        drawDots(ctx, card.rank, w, h);
     } else {
         drawDots(ctx, card.rank, w, h);
     }
 }
 
 function drawBackground(ctx, w, h) {
-    const radius = Math.min(w, h) * 0.18;
+    const radius = Math.min(w, h) * 0.2;
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = COLORS.ivory;
-    roundedRect(ctx, 0, 0, w, h, radius);
-    ctx.fill();
 
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, 'rgba(255,255,255,0.85)');
-    grad.addColorStop(0.4, 'rgba(255,255,255,0.2)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = grad;
-    roundedRect(ctx, 2, 2, w - 4, h - 4, radius - 2);
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, h);
+    baseGrad.addColorStop(0, '#fffdf8');
+    baseGrad.addColorStop(0.45, COLORS.ivory);
+    baseGrad.addColorStop(1, COLORS.ivoryShade);
+    ctx.fillStyle = baseGrad;
+    roundedRect(ctx, 0, 0, w, h, radius);
     ctx.fill();
 
     ctx.strokeStyle = COLORS.border;
     ctx.lineWidth = 1.5;
-    roundedRect(ctx, 1, 1, w - 2, h - 2, radius - 2);
+    roundedRect(ctx, 0.8, 0.8, w - 1.6, h - 1.6, radius - 2);
     ctx.stroke();
 
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-    ctx.lineWidth = 3;
-    roundedRect(ctx, 3, 3, w - 6, h - 6, radius - 3);
+    const gloss = ctx.createLinearGradient(0, 0, 0, h * 0.65);
+    gloss.addColorStop(0, 'rgba(255,255,255,0.85)');
+    gloss.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gloss;
+    roundedRect(ctx, 2, 2, w - 4, h * 0.55, radius - 4);
+    ctx.fill();
+
+    ctx.save();
+    ctx.shadowColor = COLORS.deepShadow;
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 4;
+    roundedRect(ctx, 3, 6, w - 6, h - 9, radius - 5);
+    ctx.strokeStyle = 'rgba(0,0,0,0)';
     ctx.stroke();
+    ctx.restore();
+}
+
+function drawRingCircle(ctx, cx, cy, outerRadius, colors) {
+    ctx.lineWidth = outerRadius * 0.15;
+    ctx.strokeStyle = colors.ring;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = colors.fill;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerRadius - ctx.lineWidth, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawTileSuitImage(ctx, key, w, h) {
+    const img = tileImages[key];
+    if (!img || !img.complete || !img.naturalWidth) {
+        return false;
+    }
+    const padding = Math.min(w, h) * 0.12;
+    ctx.drawImage(img, padding, padding, w - padding * 2, h - padding * 2);
+    return true;
+}
+
+function drawHonorImage(ctx, honor, w, h) {
+    const img = honorImages[honor];
+    if (!img || !img.complete || !img.naturalWidth) {
+        return false;
+    }
+    const padding = Math.min(w, h) * 0.18;
+    const drawWidth = w - padding * 2;
+    const drawHeight = h - padding * 2;
+    ctx.drawImage(img, padding, padding, drawWidth, drawHeight);
+    return true;
 }
 
 function drawBamboo(ctx, rank, w, h) {
-    const available = h - 20;
-    const spacing = available / rank;
-    const stickW = Math.min(w * 0.22, 18);
-    const x = w / 2 - stickW / 2;
-
-    for (let i = 0; i < rank; i++) {
-        const y = 10 + i * spacing + (spacing - 10) / 2;
-        ctx.fillStyle = COLORS.green;
-        roundedRect(ctx, x, y, stickW, spacing - 6, stickW * 0.4);
-        ctx.fill();
-
-        ctx.fillStyle = COLORS.yellow;
-        ctx.beginPath();
-        ctx.arc(w / 2, y + (spacing / 2) - 2, stickW * 0.3, 0, Math.PI * 2);
-        ctx.fill();
+    if (rank === 1) {
+        drawPhoenixBamboo(ctx, w, h);
+        return;
     }
+    const stickWidth = w * 0.16;
+    const stickHeight = h * 0.7;
+    const specs = getStickSpecs(rank);
+    specs.forEach(spec => {
+        drawStick(ctx, spec.x * w, spec.y * h, stickWidth, stickHeight, spec.color || COLORS.jade);
+    });
 }
 
 function drawDots(ctx, rank, w, h) {
     const specs = getDotSpecs(rank);
+    const baseRadius = Math.min(w, h) * 0.11;
     specs.forEach(spec => {
-        const radius = Math.min(w, h) * 0.11 * spec.size;
+        const radius = baseRadius * spec.size;
         const cx = spec.x * w;
         const cy = spec.y * h;
+        if (spec.type === 'ring') {
+            drawRingCircle(ctx, cx, cy, radius * 1.25, {
+                ring: COLORS.ink,
+                fill: COLORS.blue
+            });
+            ctx.fillStyle = COLORS.red;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
+            ctx.fill();
+            return;
+        }
 
-        const grad = ctx.createRadialGradient(
-            cx - radius * 0.2, cy - radius * 0.2, radius * 0.2,
-            cx, cy, radius
-        );
         const baseColor = COLORS[spec.color];
-        grad.addColorStop(0, lighten(baseColor, 0.3));
-        grad.addColorStop(0.7, baseColor);
+        const grad = ctx.createRadialGradient(
+                cx - radius * 0.2, cy - radius * 0.2, radius * 0.1,
+                cx, cy, radius
+        );
+        grad.addColorStop(0, lighten(baseColor, 0.35));
+        grad.addColorStop(0.65, baseColor);
         grad.addColorStop(1, shade(baseColor, -0.2));
 
         ctx.fillStyle = grad;
@@ -246,10 +344,10 @@ function drawDots(ctx, rank, w, h) {
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = shade(baseColor, -0.3);
-        ctx.lineWidth = radius * 0.2;
+        ctx.strokeStyle = shade(baseColor, -0.35);
+        ctx.lineWidth = Math.max(2, radius * 0.2);
         ctx.beginPath();
-        ctx.arc(cx, cy, radius * 0.8, 0, Math.PI * 2);
+        ctx.arc(cx, cy, radius - ctx.lineWidth / 2, 0, Math.PI * 2);
         ctx.stroke();
 
         if (spec.innerRed) {
@@ -276,79 +374,71 @@ function drawHonor(ctx, honor, w, h) {
 }
 
 function getDotSpecs(rank) {
-    const left = 0.3;
-    const right = 0.7;
-    const top = 0.3;
-    const bottom = 0.7;
-    const middle = 0.5;
-    const quarterX = 0.2;
-    const threeQuarterX = 0.8;
-    const upperBand = 0.28;
-    const lowerBand = 0.72;
-
     const specs = [];
-    const addCorner = color => {
-        specs.push({x: left, y: top, color, size: 1});
-        specs.push({x: right, y: top, color, size: 1});
-        specs.push({x: left, y: bottom, color, size: 1});
-        specs.push({x: right, y: bottom, color, size: 1});
+    const cols = [0.25, 0.5, 0.75];
+    const rows = [0.27, 0.5, 0.73];
+
+    const addCorners = color => {
+        specs.push({x: cols[0], y: rows[0], color, size: 1});
+        specs.push({x: cols[2], y: rows[0], color, size: 1});
+        specs.push({x: cols[0], y: rows[2], color, size: 1});
+        specs.push({x: cols[2], y: rows[2], color, size: 1});
     };
 
     switch (rank) {
         case 1:
-            specs.push({x: 0.5, y: 0.5, color: 'blue', size: 1.25, innerRed: true});
+            specs.push({x: 0.5, y: 0.5, type: 'ring', size: 1});
             break;
         case 2:
-            specs.push({x: 0.5, y: top, color: 'green', size: 1});
-            specs.push({x: 0.5, y: bottom, color: 'green', size: 1});
+            specs.push({x: 0.5, y: rows[0], color: 'green', size: 1});
+            specs.push({x: 0.5, y: rows[2], color: 'green', size: 1});
             break;
         case 3:
-            specs.push({x: left, y: bottom, color: 'green', size: 1});
-            specs.push({x: 0.5, y: middle, color: 'green', size: 1});
-            specs.push({x: right, y: top, color: 'green', size: 1});
+            specs.push({x: cols[0], y: rows[2], color: 'green', size: 1});
+            specs.push({x: 0.5, y: 0.5, color: 'blue', size: 1});
+            specs.push({x: cols[2], y: rows[0], color: 'green', size: 1});
             break;
         case 4:
-            addCorner('green');
+            addCorners('green');
             break;
         case 5:
-            addCorner('green');
-            specs.push({x: 0.5, y: middle, color: 'red', size: 1});
+            addCorners('green');
+            specs.push({x: 0.5, y: 0.5, color: 'red', size: 1});
             break;
         case 6:
-            specs.push({x: 0.4, y: upperBand, color: 'blue', size: 1.05});
-            specs.push({x: 0.6, y: upperBand, color: 'blue', size: 1.05});
-            specs.push({x: quarterX, y: lowerBand, color: 'green', size: 1});
-            specs.push({x: 0.4, y: lowerBand, color: 'green', size: 1});
-            specs.push({x: 0.6, y: lowerBand, color: 'green', size: 1});
-            specs.push({x: threeQuarterX, y: lowerBand, color: 'green', size: 1});
+            [cols[0], cols[2]].forEach(x => {
+                specs.push({x, y: rows[0], color: 'blue', size: 1.05});
+                specs.push({x, y: rows[2], color: 'green', size: 1});
+            });
+            specs.push({x: cols[0], y: 0.5, color: 'green', size: 1});
+            specs.push({x: cols[2], y: 0.5, color: 'green', size: 1});
             break;
         case 7:
-            specs.push({x: quarterX, y: lowerBand, color: 'green', size: 1});
-            specs.push({x: 0.4, y: lowerBand, color: 'green', size: 1});
-            specs.push({x: 0.6, y: lowerBand, color: 'green', size: 1});
-            specs.push({x: threeQuarterX, y: lowerBand, color: 'green', size: 1});
-            specs.push({x: 0.3, y: 0.4, color: 'blue', size: 1.05});
-            specs.push({x: 0.5, y: 0.28, color: 'blue', size: 1.05});
-            specs.push({x: 0.7, y: 0.4, color: 'blue', size: 1.05});
-            break;
-        case 8: {
-            const topRow = 0.32;
-            const bottomRow = 0.68;
-            [quarterX, 0.4, 0.6, threeQuarterX].forEach(x => {
-                specs.push({x, y: topRow, color: 'blue', size: 1});
-                specs.push({x, y: bottomRow, color: 'green', size: 1});
+            [cols[0], cols[1], cols[2]].forEach((x, idx) => {
+                specs.push({x, y: rows[2], color: 'green', size: 1});
+                if (idx !== 1) {
+                    specs.push({x, y: 0.45, color: 'blue', size: 1});
+                }
             });
+            specs.push({x: 0.5, y: rows[0] - 0.08, color: 'blue', size: 1});
             break;
-        }
+        case 8:
+            cols.forEach(x => {
+                specs.push({x, y: rows[0], color: 'blue', size: 1});
+                specs.push({x, y: rows[2], color: 'green', size: 1});
+            });
+            specs.push({x: cols[0], y: 0.5, color: 'blue', size: 1});
+            specs.push({x: cols[2], y: 0.5, color: 'green', size: 1});
+            break;
         case 9:
-            [0.25, 0.5, 0.75].forEach((y, row) => {
-                [0.28, 0.5, 0.72].forEach((x, col) => {
-                    const center = row === 1 && col === 1;
+            rows.forEach((y, rowIdx) => {
+                cols.forEach((x, colIdx) => {
+                    const center = rowIdx === 1 && colIdx === 1;
                     specs.push({
                         x,
                         y,
-                        color: center ? 'red' : (row === 1 ? 'blue' : 'green'),
-                        size: 1
+                        color: center ? 'red' : (rowIdx === 1 ? 'blue' : 'green'),
+                        size: center ? 1.1 : 1
                     });
                 });
             });
@@ -357,6 +447,115 @@ function getDotSpecs(rank) {
             break;
     }
     return specs;
+}
+
+function getStickSpecs(rank) {
+    const specs = [];
+    const cols = {left: 0.32, center: 0.5, right: 0.68};
+    const rows = {top: 0.28, mid: 0.5, bottom: 0.72};
+
+    const addColumn = (x, positions) => positions.forEach(pos => specs.push({x, y: rows[pos]}));
+
+    switch (rank) {
+        case 2:
+            addColumn(cols.left, ['mid']);
+            addColumn(cols.right, ['mid']);
+            break;
+        case 3:
+            addColumn(cols.left, ['mid']);
+            addColumn(cols.center, ['mid']);
+            addColumn(cols.right, ['mid']);
+            break;
+        case 4:
+            addColumn(cols.left, ['top', 'bottom']);
+            addColumn(cols.right, ['top', 'bottom']);
+            break;
+        case 5:
+            addColumn(cols.left, ['top', 'bottom']);
+            addColumn(cols.right, ['top', 'bottom']);
+            specs.push({x: cols.center, y: rows.mid});
+            break;
+        case 6:
+            addColumn(cols.left, ['top', 'mid', 'bottom']);
+            addColumn(cols.right, ['top', 'mid', 'bottom']);
+            break;
+        case 7:
+            addColumn(cols.left, ['top', 'mid', 'bottom']);
+            addColumn(cols.right, ['top', 'mid', 'bottom']);
+            specs.push({x: cols.center, y: rows.top - 0.08});
+            break;
+        case 8:
+            addColumn(cols.left, ['top', 'mid', 'bottom']);
+            addColumn(cols.right, ['top', 'mid', 'bottom']);
+            specs.push({x: cols.center, y: rows.top - 0.05});
+            specs.push({x: cols.center, y: rows.bottom + 0.05});
+            break;
+        case 9:
+            addColumn(cols.left, ['top', 'mid', 'bottom']);
+            addColumn(cols.center, ['top', 'mid', 'bottom']);
+            addColumn(cols.right, ['top', 'mid', 'bottom']);
+            break;
+        default:
+            addColumn(cols.center, ['mid']);
+            break;
+    }
+    return specs;
+}
+
+function drawStick(ctx, cx, cy, width, height, color) {
+    const x = cx - width / 2;
+    const y = cy - height / 2;
+    const grad = ctx.createLinearGradient(cx, y, cx, y + height);
+    grad.addColorStop(0, lighten(color, 0.3));
+    grad.addColorStop(1, shade(color, -0.2));
+    ctx.fillStyle = grad;
+    roundedRect(ctx, x, y, width, height, width * 0.4);
+    ctx.fill();
+
+    ctx.strokeStyle = shade(color, -0.4);
+    ctx.lineWidth = 1.2;
+    roundedRect(ctx, x, y, width, height, width * 0.4);
+    ctx.stroke();
+
+    const nodeRadius = width * 0.35;
+    [0.33, 0.67].forEach(ratio => {
+        ctx.fillStyle = COLORS.amber;
+        ctx.beginPath();
+        ctx.arc(cx, y + height * ratio, nodeRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    });
+}
+
+function drawPhoenixBamboo(ctx, w, h) {
+    const cx = w / 2;
+    const baseY = h * 0.7;
+    const grad = ctx.createLinearGradient(cx, h * 0.2, cx, baseY);
+    grad.addColorStop(0, lighten(COLORS.jade, 0.25));
+    grad.addColorStop(1, COLORS.jade);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(cx, h * 0.2);
+    ctx.quadraticCurveTo(cx - w * 0.12, baseY - h * 0.1, cx - w * 0.04, baseY);
+    ctx.quadraticCurveTo(cx, baseY + h * 0.05, cx + w * 0.04, baseY);
+    ctx.quadraticCurveTo(cx + w * 0.12, baseY - h * 0.1, cx, h * 0.2);
+    ctx.fill();
+
+    [-1, 1].forEach(dir => {
+        ctx.fillStyle = lighten(COLORS.jade, 0.15);
+        ctx.beginPath();
+        ctx.moveTo(cx, h * 0.25);
+        ctx.quadraticCurveTo(cx + dir * w * 0.18, h * 0.35, cx + dir * w * 0.1, h * 0.55);
+        ctx.quadraticCurveTo(cx + dir * w * 0.03, h * 0.6, cx, h * 0.4);
+        ctx.fill();
+    });
+
+    ctx.fillStyle = COLORS.red;
+    ctx.beginPath();
+    ctx.arc(cx, h * 0.22, w * 0.06, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 function roundedRect(ctx, x, y, w, h, r) {
@@ -373,23 +572,33 @@ function roundedRect(ctx, x, y, w, h, r) {
 }
 
 function lighten(color, amount) {
-    const {r, g, b} = hexToRgb(color);
+    const {r, g, b} = parseColor(color);
     return `rgb(${Math.min(255, r + 255 * amount)}, ${Math.min(255, g + 255 * amount)}, ${Math.min(255, b + 255 * amount)})`;
 }
 
 function shade(color, amount) {
-    const {r, g, b} = hexToRgb(color);
+    const {r, g, b} = parseColor(color);
     return `rgb(${Math.max(0, r + 255 * amount)}, ${Math.max(0, g + 255 * amount)}, ${Math.max(0, b + 255 * amount)})`;
 }
 
-function hexToRgb(hex) {
-    const parsed = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!parsed) {
-        return {r: 0, g: 0, b: 0};
+function parseColor(value) {
+    if (value.startsWith('#')) {
+        const parsed = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(value);
+        if (parsed) {
+            return {
+                r: parseInt(parsed[1], 16),
+                g: parseInt(parsed[2], 16),
+                b: parseInt(parsed[3], 16)
+            };
+        }
     }
-    return {
-        r: parseInt(parsed[1], 16),
-        g: parseInt(parsed[2], 16),
-        b: parseInt(parsed[3], 16)
-    };
+    const match = /rgba?\((\d+),\s*(\d+),\s*(\d+)/i.exec(value);
+    if (match) {
+        return {
+            r: parseInt(match[1], 10),
+            g: parseInt(match[2], 10),
+            b: parseInt(match[3], 10)
+        };
+    }
+    return {r: 0, g: 0, b: 0};
 }
