@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,21 +18,37 @@ public class HumanPlayer extends Player {
     @Override
     public TurnAction playTurn() {
         List<Card> snapshot = snapshotHand();
-        if (engine.checkHu(hand)) {
-            int fan = engine.calculateFan(hand);
+        List<Card> evaluationTiles = getEvaluationTiles();
+        if (engine.checkHu(evaluationTiles)) {
+            int fan = engine.calculateFan(evaluationTiles);
             if (decisionProvider.shouldHu(snapshot, fan)) {
                 return TurnAction.hu(fan);
             }
         }
-        int index = decisionProvider.chooseDiscardIndex(snapshot);
-        if (index < 0 || index >= hand.size()) {
-            throw new IllegalArgumentException("出牌索引越界: " + index);
-        }
-        Card discarded = hand.remove(index);
+        Card discarded = discardOne();
         return TurnAction.discard(discarded);
+    }
+
+    @Override
+    protected int selectDiscardIndex() {
+        return decisionProvider.chooseDiscardIndex(snapshotHand());
+    }
+
+    @Override
+    public ReactionType chooseReaction(Card tile, boolean canPeng, boolean canGang) {
+        return decisionProvider.chooseReaction(tile, snapshotHand(), canPeng, canGang);
+    }
+
+    @Override
+    public boolean shouldHuOnDiscard(Card tile, EnumSet<WinCategory> categories, int fan) {
+        return decisionProvider.shouldHuOnDiscard(tile, snapshotHand(), snapshotMelds(), new ArrayList<>(categories), fan);
     }
 
     private List<Card> snapshotHand() {
         return Collections.unmodifiableList(new ArrayList<>(hand));
+    }
+
+    private List<Meld> snapshotMelds() {
+        return Collections.unmodifiableList(new ArrayList<>(melds));
     }
 }

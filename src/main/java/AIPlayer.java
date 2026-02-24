@@ -15,16 +15,17 @@ public class AIPlayer extends Player {
 
     @Override
     public TurnAction playTurn() {
-        if (engine.checkHu(hand)) {
-            int fan = engine.calculateFan(hand);
+        List<Card> evaluationTiles = getEvaluationTiles();
+        if (engine.checkHu(evaluationTiles)) {
+            int fan = engine.calculateFan(evaluationTiles);
             return TurnAction.hu(fan);
         }
-        int discardIndex = selectDiscardIndex();
-        Card discarded = hand.remove(discardIndex);
+        Card discarded = discardOne();
         return TurnAction.discard(discarded);
     }
 
-    private int selectDiscardIndex() {
+    @Override
+    protected int selectDiscardIndex() {
         List<Card> remainingTiles = buildRemainingTilePool();
         int bestIndex = 0;
         double bestExpectation = Double.NEGATIVE_INFINITY;
@@ -62,8 +63,9 @@ public class AIPlayer extends Player {
             }
             Card drawn = deck.remove(random.nextInt(deck.size()));
             currentHand.add(drawn);
-            if (engine.checkHu(currentHand)) {
-                return engine.calculateFan(currentHand);
+            List<Card> evaluation = buildEvaluationSnapshot(currentHand);
+            if (engine.checkHu(evaluation)) {
+                return engine.calculateFan(evaluation);
             }
             int discardIdx = random.nextInt(currentHand.size());
             currentHand.remove(discardIdx);
@@ -88,6 +90,11 @@ public class AIPlayer extends Player {
         for (Card card : hand) {
             removeFirstMatch(pool, card);
         }
+        for (Meld meld : melds) {
+            for (Card card : meld.getCards()) {
+                removeFirstMatch(pool, card);
+            }
+        }
         return pool;
     }
 
@@ -101,12 +108,27 @@ public class AIPlayer extends Player {
         throw new IllegalStateException("牌堆中没有足够的牌可供模拟");
     }
 
-    private boolean isSameTile(Card first, Card second) {
-        if (first.isHonor() || second.isHonor()) {
-            return first.isHonor() && second.isHonor() && first.getHonor() == second.getHonor();
+    private List<Card> buildEvaluationSnapshot(List<Card> currentHand) {
+        List<Card> evaluation = new ArrayList<>(currentHand);
+        for (Meld meld : melds) {
+            evaluation.addAll(meld.getCards());
         }
-        return first.getSuit() == second.getSuit()
-                && first.getRank() != null
-                && first.getRank().equals(second.getRank());
+        return evaluation;
+    }
+
+    @Override
+    public ReactionType chooseReaction(Card tile, boolean canPeng, boolean canGang) {
+        if (canGang) {
+            return ReactionType.GANG;
+        }
+        if (canPeng) {
+            return ReactionType.PENG;
+        }
+        return ReactionType.NONE;
+    }
+
+    @Override
+    public boolean shouldHuOnDiscard(Card tile, java.util.EnumSet<WinCategory> categories, int fan) {
+        return true;
     }
 }

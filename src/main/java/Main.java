@@ -1,6 +1,8 @@
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 /**
  * 控制台版本游戏主循环（真人 + 两个 AI）。
@@ -16,12 +18,12 @@ public class Main {
             HumanPlayer human = new HumanPlayer("玩家", engine, decisionProvider);
             AIPlayer aiOne = new AIPlayer("AI-1", engine);
             AIPlayer aiTwo = new AIPlayer("AI-2", engine);
-            Game game = new Game(table, Arrays.asList(human, aiOne, aiTwo));
+            Game game = new Game(table, engine, Arrays.asList(human, aiOne, aiTwo));
             decisionProvider.bindGame(game);
 
             System.out.println("三人卡五星对决开始，祝你好运！");
-            Game.TurnOutcome opening = game.startRound();
-            if (handleOutcome(game, opening)) {
+            List<Game.TurnOutcome> opening = game.startRound();
+            if (processOutcomes(game, opening)) {
                 System.out.println("本局结束。");
                 return;
             }
@@ -39,8 +41,8 @@ public class Main {
                 printHand(current.getHand());
                 printDiscardPile(game.getDiscardPile());
             }
-            Game.TurnOutcome outcome = game.playTurn();
-            if (handleOutcome(game, outcome)) {
+            List<Game.TurnOutcome> outcomes = game.playTurn();
+            if (processOutcomes(game, outcomes)) {
                 break;
             }
         }
@@ -66,24 +68,83 @@ public class Main {
         System.out.println();
     }
 
+    private static boolean processOutcomes(Game game, List<Game.TurnOutcome> outcomes) {
+        for (Game.TurnOutcome outcome : outcomes) {
+            if (handleOutcome(game, outcome)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean handleOutcome(Game game, Game.TurnOutcome outcome) {
         if (outcome == null) {
             return false;
         }
-        if (outcome.isWallDepleted()) {
-            System.out.println("牌堆摸空，流局结束。");
-            return true;
+        switch (outcome.getActionType()) {
+            case WALL_DEPLETED:
+                System.out.println("牌堆摸空，流局结束。");
+                return true;
+            case HU:
+                String style = outcome.isSelfDraw() ? "自摸" : "点炮";
+                EnumSet<WinCategory> categories = outcome.getCategories();
+                String categoryText = categories != null && !categories.isEmpty()
+                        ? formatCategories(categories)
+                        : "屁胡";
+                System.out.println(outcome.getPlayer().getName() + " " + style + "胡牌！番数: "
+                        + outcome.getFan() + "，牌型：" + categoryText);
+                return true;
+            case INITIAL_DISCARD:
+                System.out.println(outcome.getPlayer().getName() + " 开始牌打出: " + outcome.getDiscardedCard());
+                printDiscardPile(game.getDiscardPile());
+                return false;
+            case DRAW_DISCARD:
+                if (outcome.getDrawnCard() != null) {
+                    System.out.println(outcome.getPlayer().getName() + " 摸到 " + outcome.getDrawnCard() + "，打出: " + outcome.getDiscardedCard());
+                } else {
+                    System.out.println(outcome.getPlayer().getName() + " 打出: " + outcome.getDiscardedCard());
+                }
+                printDiscardPile(game.getDiscardPile());
+                return false;
+            case CLAIM_PENG:
+                System.out.println(outcome.getPlayer().getName() + " 碰了 " + outcome.getClaimedCard() + "，打出: " + outcome.getDiscardedCard());
+                printDiscardPile(game.getDiscardPile());
+                return false;
+            case CLAIM_GANG:
+                System.out.println(outcome.getPlayer().getName() + " 杠了 " + outcome.getClaimedCard() + "，打出: " + outcome.getDiscardedCard());
+                printDiscardPile(game.getDiscardPile());
+                return false;
+            default:
+                return false;
         }
-        if (outcome.isHu()) {
-            System.out.println(outcome.getPlayer().getName() + " 胡牌！番数: " + outcome.getFan());
-            return true;
+    }
+
+    private static String formatCategories(EnumSet<WinCategory> categories) {
+        return categories.stream()
+                .map(Main::categoryName)
+                .collect(Collectors.joining("、"));
+    }
+
+    private static String categoryName(WinCategory category) {
+        switch (category) {
+            case QING_YI_SE:
+                return "清一色";
+            case PENG_PENG_HU:
+                return "碰碰胡";
+            case KA_WU:
+                return "卡五星";
+            case MING_SI_GUI:
+                return "明四归";
+            case AN_SI_GUI:
+                return "暗四归";
+            case QI_DUI:
+                return "七对";
+            case LONG_QI_DUI:
+                return "龙七对";
+            case PI_HU:
+            default:
+                return "屁胡";
         }
-        if (outcome.getDiscardedCard() != null && outcome.getPlayer() != null) {
-            String action = outcome.getDrawnCard() == null ? "开始牌打出: " : "打出: ";
-            System.out.println(outcome.getPlayer().getName() + " " + action + outcome.getDiscardedCard());
-            printDiscardPile(game.getDiscardPile());
-        }
-        return false;
     }
 
     /**
@@ -129,6 +190,59 @@ public class Main {
                 }
                 System.out.println("输入无效，请重新输入。");
             }
+        }
+
+        @Override
+        public ReactionType chooseReaction(Card tile, List<Card> hand, boolean canPeng, boolean canGang) {
+            if (!canPeng && !canGang) {
+                return ReactionType.NONE;
+            }
+            System.out.println("\n轮到你选择是否对 " + tile + " 进行操作：");
+            System.out.print("可选操作：");
+            if (canPeng) {
+                System.out.print("[p]碰 ");
+            }
+            if (canGang) {
+                System.out.print("[g]杠 ");
+            }
+            System.out.println("[n]过");
+            while (true) {
+                System.out.print("请输入选择: ");
+                String input = scanner.nextLine().trim().toLowerCase();
+                switch (input) {
+                    case "p":
+                        if (canPeng) {
+                            return ReactionType.PENG;
+                        }
+                        break;
+                    case "g":
+                        if (canGang) {
+                            return ReactionType.GANG;
+                        }
+                        break;
+                    case "n":
+                        return ReactionType.NONE;
+                    default:
+                        break;
+                }
+                System.out.println("输入无效，请重新选择。");
+            }
+        }
+
+        @Override
+        public boolean shouldHuOnDiscard(Card tile, List<Card> hand, List<Meld> melds, List<WinCategory> categories, int fan) {
+            String categoryText = categories == null || categories.isEmpty()
+                    ? "屁胡"
+                    : categories.stream().map(Main::categoryName).collect(Collectors.joining("、"));
+            System.out.println("\n" + tile + " 可胡，牌型：" + categoryText + "，番数：" + fan);
+            printHand(hand);
+            if (melds != null && !melds.isEmpty()) {
+                System.out.println("你的已落地牌组：");
+                for (Meld meld : melds) {
+                    System.out.println(meld.getType() + ": " + meld.getCards());
+                }
+            }
+            return askYesNo("是否胡牌？(y/n): ");
         }
 
         private boolean askYesNo(String prompt) {

@@ -7,11 +7,23 @@ public class GameEngine {
     private static final int TILE_COUNT = 21; // 条、筒各9张以及3张字牌
     private static final int HONOR_OFFSET = 18;
     private static final int INVALID_SCORE = -1;
+    private static final int SEVEN_PAIRS_FAN = 6;
+    private static final int LONG_SEVEN_PAIRS_FAN = 8;
 
     /**
-     * 判断手牌是否满足四副面子加一对将的胡牌形状。
+     * 判断手牌是否满足胡牌形状（四副面子一对将或七对）。
      */
     public boolean checkHu(List<Card> hand) {
+        if (!isHandSizeValid(hand)) {
+            return false;
+        }
+        return checkStandardPattern(hand) || isSevenPairs(hand);
+    }
+
+    /**
+     * 判断是否为四副面子加一对将的标准胡牌。
+     */
+    public boolean checkStandardPattern(List<Card> hand) {
         if (!isHandSizeValid(hand)) {
             return false;
         }
@@ -30,10 +42,16 @@ public class GameEngine {
     }
 
     /**
-     * 根据顺子、刻子、对子数量给出一个简单番值，若未胡牌则返回0。
+     * 根据牌型给出一个简易番值。
      */
     public int calculateFan(List<Card> hand) {
-        if (!checkHu(hand)) {
+        if (!isHandSizeValid(hand)) {
+            return 0;
+        }
+        if (isSevenPairs(hand)) {
+            return isLongSevenPairs(hand) ? LONG_SEVEN_PAIRS_FAN : SEVEN_PAIRS_FAN;
+        }
+        if (!checkStandardPattern(hand)) {
             return 0;
         }
         int[] counts = buildCounts(hand);
@@ -49,6 +67,41 @@ public class GameEngine {
             }
         }
         return maxFan;
+    }
+
+    public boolean isSevenPairs(List<Card> hand) {
+        if (hand == null || hand.size() != 14) {
+            return false;
+        }
+        int[] counts = buildCounts(hand);
+        int pairs = 0;
+        for (int count : counts) {
+            if (count == 0) {
+                continue;
+            }
+            if (count % 2 != 0) {
+                return false;
+            }
+            pairs += count / 2;
+        }
+        return pairs == 7;
+    }
+
+    public boolean isLongSevenPairs(List<Card> hand) {
+        if (!isSevenPairs(hand)) {
+            return false;
+        }
+        int[] counts = buildCounts(hand);
+        for (int count : counts) {
+            if (count >= 4) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int[] countTiles(List<Card> hand) {
+        return buildCounts(hand);
     }
 
     private boolean isHandSizeValid(List<Card> hand) {
