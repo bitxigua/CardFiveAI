@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>卡五星 - Spring Boot Web 版</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+    <header class="app-header">
+        <h1>卡五星 - Spring Boot Web 版</h1>
+        <div class="controls">
+            <button id="start-btn">开始新局</button>
+            <span id="status-label">等待开始</span>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <section class="panel">
+            <h2>手牌</h2>
+            <div id="hand-container" class="tile-grid"></div>
+            <p id="hand-hint" class="hint"></p>
+        </section>
+
+        <section class="panel">
+            <h2>桌面弃牌</h2>
+            <div id="discard-container" class="tile-grid small"></div>
+        </section>
+
+        <section class="panel actions-panel">
+            <h2>操作</h2>
+            <div id="action-message" class="hint"></div>
+            <div class="action-buttons">
+                <button id="hu-btn" disabled>胡</button>
+                <button id="peng-btn" disabled>碰</button>
+                <button id="gang-btn" disabled>杠</button>
+                <button id="pass-btn" disabled>过</button>
+            </div>
+        </section>
+
+        <section class="panel log-panel">
+            <h2>战况</h2>
+            <ul id="log-list"></ul>
+        </section>
+    </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

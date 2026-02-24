@@ -1,15 +1,17 @@
+package com.cardfive;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * GUI 版真人决策输入，通过回调与 JavaFX 界面交互。
+ * 通用异步决策提供者，通过交互网关进行玩家输入。
  */
-public class GuiDecisionProvider implements HumanDecisionProvider {
-    private final GuiInteractionHandler handler;
+public class AsyncDecisionProvider implements HumanDecisionProvider {
+    private final PlayerInteractionHandler handler;
 
-    public GuiDecisionProvider(GuiInteractionHandler handler) {
+    public AsyncDecisionProvider(PlayerInteractionHandler handler) {
         this.handler = handler;
     }
 

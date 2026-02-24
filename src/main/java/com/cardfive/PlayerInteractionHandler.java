@@ -1,11 +1,13 @@
+package com.cardfive;
+
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
- * GUI 层与真人决策之间的交互回调。
+ * 处理真人玩家与游戏引擎之间的交互。
  */
-public interface GuiInteractionHandler {
+public interface PlayerInteractionHandler {
     void requestDiscardSelection(List<Card> handSnapshot, IntConsumer consumer);
 
     void requestReaction(Card tile, boolean canPeng, boolean canGang, Consumer<ReactionType> consumer);

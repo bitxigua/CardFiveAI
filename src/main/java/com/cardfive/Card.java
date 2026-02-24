@@ -1,3 +1,5 @@
+package com.cardfive;
+
 /**
  * 表示一张卡五星麻将牌。
  */
