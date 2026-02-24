@@ -153,12 +153,10 @@ public class WebGameService implements PlayerInteractionHandler {
                         + "，打出 " + outcome.getDiscardedCard());
                 break;
             case CLAIM_PENG:
-                logEntries.add(outcome.getPlayer().getName() + " 碰 " + outcome.getClaimedCard()
-                        + "，打出 " + outcome.getDiscardedCard());
+                logEntries.add(formatClaimLog(outcome, "碰"));
                 break;
             case CLAIM_GANG:
-                logEntries.add(outcome.getPlayer().getName() + " 杠 " + outcome.getClaimedCard()
-                        + "，打出 " + outcome.getDiscardedCard());
+                logEntries.add(formatClaimLog(outcome, "杠"));
                 break;
             case HU:
                 EnumSet<WinCategory> categories = outcome.getCategories();
@@ -176,6 +174,19 @@ public class WebGameService implements PlayerInteractionHandler {
             default:
                 break;
         }
+    }
+
+    private String formatClaimLog(Game.TurnOutcome outcome, String action) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(outcome.getPlayer().getName())
+                .append(' ')
+                .append(action)
+                .append(' ')
+                .append(outcome.getClaimedCard());
+        if (outcome.getDiscardedCard() != null) {
+            builder.append("，打出 ").append(outcome.getDiscardedCard());
+        }
+        return builder.toString();
     }
 
     private void refreshSnapshots() {

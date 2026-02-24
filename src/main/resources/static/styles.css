@@ -63,10 +63,17 @@ button:not(:disabled):hover {
     transform: translateY(-2px);
 }
 
-.app-main {
+.table-main {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.table-board {
     display: grid;
-    gap: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: 220px 1fr 220px;
+    gap: 16px;
+    min-height: 360px;
 }
 
 .panel {
@@ -82,15 +89,84 @@ button:not(:disabled):hover {
     font-size: 1.2rem;
 }
 
+.ai-seat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px 12px;
+    border-radius: 14px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.ai-seat h3 {
+    margin: 0 0 8px;
+}
+
+.ai-placeholder {
+    color: var(--hint);
+    font-size: 0.9rem;
+}
+
+.board-center {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.status-stack {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    padding: 12px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.discard-board .tile-grid {
+    justify-content: center;
+}
+
+.panel.wide {
+    flex: 1;
+}
+
+.table-board .panel {
+    margin: 0;
+}
+
+.player-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.player-zone__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.hand-row {
+    justify-content: center;
+}
+
+.tile-grid.board canvas {
+    width: 80px;
+    height: 112px;
+}
+
 .tile-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-}
-
-.tile-grid.small canvas {
-    transform: scale(0.7);
-    transform-origin: top left;
 }
 
 .tile-wrapper {
@@ -116,10 +192,17 @@ button:not(:disabled):hover {
     min-height: 1.4em;
 }
 
+.player-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .actions-panel .action-buttons {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .log-panel ul {
@@ -140,4 +223,21 @@ button:not(:disabled):hover {
 #status-label {
     color: var(--hint);
     font-size: 0.95rem;
+}
+
+@media (max-width: 1024px) {
+    .table-board {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .table-board {
+        grid-template-columns: 1fr;
+    }
+    .ai-seat {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 12px 16px;
+    }
 }

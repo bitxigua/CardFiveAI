@@ -11,36 +11,58 @@
         <h1>卡五星 - Spring Boot Web 版</h1>
         <div class="controls">
             <button id="start-btn">开始新局</button>
-            <span id="status-label">等待开始</span>
         </div>
     </header>
 
-    <main class="app-main">
-        <section class="panel">
-            <h2>手牌</h2>
-            <div id="hand-container" class="tile-grid"></div>
-            <p id="hand-hint" class="hint"></p>
+    <main class="table-main">
+        <div class="table-board">
+            <aside class="ai-seat ai-left">
+                <h3>AI-1</h3>
+                <div class="ai-placeholder">待机中</div>
+            </aside>
+
+            <section class="board-center">
+                <div class="status-stack">
+                    <div class="status-row">
+                        <span>当前状态：</span>
+                        <strong id="status-label">等待开始</strong>
+                    </div>
+                    <p id="action-message" class="hint"></p>
+                </div>
+
+                <div class="discard-board panel">
+                    <h2>桌面弃牌</h2>
+                    <div id="discard-container" class="tile-grid board"></div>
+                </div>
+
+                <section class="panel log-panel wide">
+                    <h2>战况</h2>
+                    <ul id="log-list"></ul>
+                </section>
+            </section>
+
+            <aside class="ai-seat ai-right">
+                <h3>AI-2</h3>
+                <div class="ai-placeholder">待机中</div>
+            </aside>
+        </div>
+
+        <section class="player-zone panel">
+            <div class="player-zone__header">
+                <h2>你的手牌</h2>
+                <p id="hand-hint" class="hint"></p>
+            </div>
+            <div id="hand-container" class="tile-grid hand-row"></div>
         </section>
 
-        <section class="panel">
-            <h2>桌面弃牌</h2>
-            <div id="discard-container" class="tile-grid small"></div>
-        </section>
-
-        <section class="panel actions-panel">
+        <section class="panel actions-panel player-actions">
             <h2>操作</h2>
-            <div id="action-message" class="hint"></div>
             <div class="action-buttons">
                 <button id="hu-btn" disabled>胡</button>
                 <button id="peng-btn" disabled>碰</button>
                 <button id="gang-btn" disabled>杠</button>
                 <button id="pass-btn" disabled>过</button>
             </div>
-        </section>
-
-        <section class="panel log-panel">
-            <h2>战况</h2>
-            <ul id="log-list"></ul>
         </section>
     </main>
 </div>

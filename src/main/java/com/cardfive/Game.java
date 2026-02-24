@@ -206,20 +206,47 @@ public class Game {
             }
             Card claimedTile = removeLastDiscard(tile);
             candidate.claimTile(claimedTile, reaction);
-            Card newDiscard = candidate.discardOne();
-            discardPile.add(newDiscard);
             if (reaction == ReactionType.GANG) {
-                result.events.add(TurnOutcome.claimGang(candidate, claimedTile, newDiscard));
+                SupplementResult supplement = executeSupplementAfterGang(candidate);
+                result.events.add(TurnOutcome.claimGang(candidate, claimedTile, supplement.getDiscardedCard()));
+                if (supplement.isWallEmpty()) {
+                    result.events.add(TurnOutcome.wallDepleted());
+                    result.finalDiscarerIndex = playerIndex;
+                    result.roundEnded = true;
+                    return result;
+                }
+                if (supplement.isHu()) {
+                    result.events.add(TurnOutcome.hu(candidate, supplement.getDrawnCard(),
+                            supplement.getFan(), true, EnumSet.of(WinCategory.PI_HU)));
+                    result.finalDiscarerIndex = playerIndex;
+                    result.roundEnded = true;
+                    return result;
+                }
+                Card newDiscard = supplement.getDiscardedCard();
+                if (newDiscard == null) {
+                    throw new IllegalStateException("杠后未产生新的弃牌。");
+                }
+                discardPile.add(newDiscard);
+                result.events.add(TurnOutcome.drawDiscard(candidate, supplement.getDrawnCard(), newDiscard));
+                ClaimResult chained = resolveClaims(newDiscard, playerIndex, true);
+                result.events.addAll(chained.events);
+                result.finalDiscarerIndex = chained.finalDiscarerIndex;
+                if (chained.roundEnded) {
+                    result.roundEnded = true;
+                }
+                return result;
             } else {
+                Card newDiscard = candidate.discardOne();
+                discardPile.add(newDiscard);
                 result.events.add(TurnOutcome.claimPeng(candidate, claimedTile, newDiscard));
+                ClaimResult chained = resolveClaims(newDiscard, playerIndex, false);
+                result.events.addAll(chained.events);
+                result.finalDiscarerIndex = chained.finalDiscarerIndex;
+                if (chained.roundEnded) {
+                    result.roundEnded = true;
+                }
+                return result;
             }
-            ClaimResult chained = resolveClaims(newDiscard, playerIndex, reaction == ReactionType.GANG);
-            result.events.addAll(chained.events);
-            result.finalDiscarerIndex = chained.finalDiscarerIndex;
-            if (chained.roundEnded) {
-                result.roundEnded = true;
-            }
-            return result;
         }
         result.finalDiscarerIndex = discarderIndex;
         return result;
@@ -367,6 +394,29 @@ public class Game {
         return isSameTile(meld.getCards().get(0), tile);
     }
 
+    private SupplementResult executeSupplementAfterGang(Player player) {
+        SupplementResult result = new SupplementResult();
+        if (table.getDeck().isEmpty()) {
+            result.wallEmpty = true;
+            return result;
+        }
+        Card drawn = table.deal();
+        player.draw(drawn);
+        result.drawnCard = drawn;
+        Player.TurnAction action = player.playTurn();
+        if (action.isHu()) {
+            result.hu = true;
+            result.fan = action.getFan();
+        } else {
+            Card discarded = action.getDiscarded();
+            if (discarded == null) {
+                throw new IllegalStateException("杠后玩家未打出任何牌。");
+            }
+            result.discardedCard = discarded;
+        }
+        return result;
+    }
+
     private int countTile(List<Card> cards, Card tile) {
         int count = 0;
         for (Card card : cards) {
@@ -502,6 +552,34 @@ public class Game {
 
         public EnumSet<WinCategory> getCategories() {
             return categories == null ? null : EnumSet.copyOf(categories);
+        }
+    }
+
+    private static final class SupplementResult {
+        private Card drawnCard;
+        private Card discardedCard;
+        private boolean hu;
+        private int fan;
+        private boolean wallEmpty;
+
+        private Card getDrawnCard() {
+            return drawnCard;
+        }
+
+        private Card getDiscardedCard() {
+            return discardedCard;
+        }
+
+        private boolean isHu() {
+            return hu;
+        }
+
+        private int getFan() {
+            return fan;
+        }
+
+        private boolean isWallEmpty() {
+            return wallEmpty;
         }
     }
 
