@@ -33,6 +33,17 @@ public abstract class Player {
         return Collections.unmodifiableList(hand);
     }
 
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * 清空手牌，用于新一局开始。
+     */
+    public void resetHand() {
+        hand.clear();
+    }
+
     /**
      * 执行一次出牌或胡牌决策。
      */

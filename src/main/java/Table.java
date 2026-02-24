@@ -14,6 +14,13 @@ public class Table {
     }
 
     /**
+     * 重新构建牌堆，开始新的一局。
+     */
+    public void reset() {
+        initializeDeck();
+    }
+
+    /**
      * 构建牌堆并为每种牌准备四张。
      */
     private void initializeDeck() {
