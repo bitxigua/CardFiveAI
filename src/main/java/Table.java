@@ -3,7 +3,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 表示一张卡五星麻将的桌面。
+ * 表示一张卡五星麻将的桌面。。
  */
 public class Table {
     private final List<Card> deck = new ArrayList<>();
